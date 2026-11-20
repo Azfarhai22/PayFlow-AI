@@ -22,11 +22,21 @@ public class UserService {
         if (isEmailExists(email)) {
             throw new IllegalArgumentException("Email already exists");
         }
+
         String encodedPassword = passwordEncoder.encode(password);
         User user = new User(fullName, email, encodedPassword);
         return userRepository.save(user);
+    }
         
-    
+    public User authenticateUser(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        return user;
 
     }
 
