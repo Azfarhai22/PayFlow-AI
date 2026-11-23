@@ -2,6 +2,8 @@ package com.payflow.identity.service;
 
 import org.springframework.stereotype.Service;
 import com.payflow.identity.entity.User;
+import com.payflow.identity.exception.EmailAlreadyExistsException;
+import com.payflow.identity.exception.InvalidCredentialsException;
 import com.payflow.identity.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 @Service 
@@ -20,7 +22,7 @@ public class UserService {
 
     public User registerUser(String fullName, String email, String password) {
         if (isEmailExists(email)) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new EmailAlreadyExistsException("Email already exists");
         }
 
         String encodedPassword = passwordEncoder.encode(password);
@@ -30,10 +32,10 @@ public class UserService {
         
     public User authenticateUser(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            throw new InvalidCredentialsException("Invalid email or password");
         }
 
         return user;
