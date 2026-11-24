@@ -7,12 +7,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import com.payflow.identity.entity.User;
+import com.payflow.identity.exception.EmailAlreadyExistsException;
 import com.payflow.identity.repository.UserRepository;
 
 
@@ -57,4 +60,22 @@ import com.payflow.identity.repository.UserRepository;
             verify(passwordEncoder).encode("password123");
             
         }
-}
+
+        @Test 
+        void shouldThrowExceptionWhenEmailAlreadyExists() {
+            // 1. Mock setup
+            when(userRepository.existsByEmail("azfar@example.com")).
+            thenReturn(true);
+
+            assertThrows(EmailAlreadyExistsException.class, () -> {
+                // 2. Actual method call
+                userService.registerUser(
+                    "Azfar",
+                    "azfar@example.com",
+                    "password123"
+                );
+            });
+            verify(userRepository, never()).save(any(User.class));
+
+        }
+    }
