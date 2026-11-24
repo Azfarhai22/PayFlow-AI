@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
 import com.payflow.identity.entity.User;
 import com.payflow.identity.exception.EmailAlreadyExistsException;
 import com.payflow.identity.exception.InvalidCredentialsException;
@@ -135,5 +137,23 @@ import com.payflow.identity.repository.UserRepository;
 
         verify(userRepository).findByEmail("azfar@example.com");
         verify(passwordEncoder).matches("password123", "encodedPassword");
+    }
+
+    @Test 
+    void shouldThrowExceptionWhenEmailDoesNotExist() {
+        // 1. Mock setup
+        when(userRepository.findByEmail("azfar@example.com"))
+        .thenReturn(Optional.empty());
+
+        // 2. Actual method call
+        assertThrows(InvalidCredentialsException.class, () -> {
+            userService.authenticateUser(
+                "azfar@example.com",
+                "password123"
+            );
+        });
+
+        verify(userRepository).findByEmail("azfar@example.com");
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
     }
 }
