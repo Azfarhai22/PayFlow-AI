@@ -10,12 +10,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import com.payflow.identity.entity.User;
 import com.payflow.identity.exception.EmailAlreadyExistsException;
+import com.payflow.identity.exception.InvalidCredentialsException;
 import com.payflow.identity.repository.UserRepository;
 
 
@@ -78,4 +82,58 @@ import com.payflow.identity.repository.UserRepository;
             verify(userRepository, never()).save(any(User.class));
 
         }
+
+        @Test 
+        void shouldAuthenticateUserSuccessfully() {
+            // 1. Mock setup
+            User user = new User(
+                "Azfar",
+                "azfar@example.com",
+                "encodedPassword"
+            );
+            when(userRepository.findByEmail("azfar@example.com"))
+            .thenReturn(Optional.of(user));
+            
+            when(passwordEncoder.matches("password123", "encodedPassword"))
+            .thenReturn(true);
+           
+        // 2. Actual method call
+        User authenticatedUser = userService.authenticateUser(
+            "azfar@example.com",
+            "password123"
+        );
+
+        assertNotNull(authenticatedUser);
+        assertEquals("Azfar", authenticatedUser.getFullName());
+        assertEquals("azfar@example.com", authenticatedUser.getEmail());
+
+        verify(userRepository).findByEmail("azfar@example.com");
+        verify(passwordEncoder).matches("password123", "encodedPassword");
     }
+
+    @Test 
+    void shouldThrowExceptionWhenPasswordIsIncorrect() {
+        // 1. Mock setup
+        User user = new User(
+            "Azfar",
+            "azfar@example.com",
+            "encodedPassword"
+        );
+        when(userRepository.findByEmail("azfar@example.com"))
+        .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches("password123", "encodedPassword"))
+        .thenReturn(false);
+
+        // 2. Actual method call
+        assertThrows(InvalidCredentialsException.class, () -> {
+            userService.authenticateUser(
+                "azfar@example.com",
+                "password123"
+            );
+        });
+
+        verify(userRepository).findByEmail("azfar@example.com");
+        verify(passwordEncoder).matches("password123", "encodedPassword");
+    }
+}
