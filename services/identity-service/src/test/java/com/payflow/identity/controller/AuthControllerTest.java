@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import org.springframework.http.MediaType;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -45,7 +46,7 @@ class AuthControllerTest {
             "encodedPassword"
         );
         user.setId(1L);
-        user.setCreatedAt(LocalDateTime.of(26,11,24,10,0));
+        user.setCreatedAt(LocalDateTime.of(2026,11,24,10,0));
         
         when(userService.registerUser(
             "Azfar",
@@ -73,12 +74,56 @@ class AuthControllerTest {
             "azfar@example.com",
             "password123"
         );
+
     }
 
+    @Test 
+    void shouldLoginUserSuccessfully() throws Exception {
+        User user =new User(
+            "Azfar",
+            "azfar@example.com",
+            "encodedPassword"
+        );
+        user.setId(1L);
+
+        when(userService.authenticateUser(
+           "azfar@example.com",
+           "password123"
+         )).thenReturn(user);
+
+         when(jwtService.geneerateToken(1L, 
+            "azfar@example.com"
+         )).thenReturn("mock-jwt-taken");
+
+         mockMvc.perform(post("/api/v1/auth/login")
+           .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                { 
+                   "email":"azfar@example.com",
+                   "password":"password123"
 
 
+                }"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1L))
+            .andExpect(jsonPath("$.fullName").value("Azfar"))
+            .andExpect(jsonPath("$.email").value("azfar@example.com"))
+            .andExpect(jsonPath("$.accessToken").value("mock-jwt-taken"))
+            .andExpect(jsonPath("$.tokenType").value("Bearer"));
 
- 
-   
+        verify(userService).authenticateUser(
+            "azfar@example.com",
+            "password123"
+        );
+
+        verify(jwtService).geneerateToken(
+            1L,
+            "azfar@example.com" 
+        );
+
+           
+    }
+    
+    
     
 }
