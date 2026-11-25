@@ -1,27 +1,24 @@
 package com.payflow.identity.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-
-
-import org.junit.jupiter.api.Test;
-import com.payflow.identity.controller.AuthController;
 import com.payflow.identity.entity.User;
+import com.payflow.identity.exception.InvalidCredentialsException;
 import com.payflow.identity.security.JwtService;
 import com.payflow.identity.security.SecurityConfig;
 import com.payflow.identity.service.UserService;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import org.springframework.http.MediaType;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest (AuthController.class)
 @Import (SecurityConfig.class)
@@ -79,51 +76,69 @@ class AuthControllerTest {
 
     @Test 
     void shouldLoginUserSuccessfully() throws Exception {
-        User user =new User(
-            "Azfar",
-            "azfar@example.com",
-            "encodedPassword"
+        User user = new User(
+                "Azfar",
+                "azfar@example.com",
+                "encodedPassword"
         );
         user.setId(1L);
 
         when(userService.authenticateUser(
-           "azfar@example.com",
-           "password123"
-         )).thenReturn(user);
+                "azfar@example.com",
+                "password123"
+        )).thenReturn(user);
 
-         when(jwtService.geneerateToken(1L, 
-            "azfar@example.com"
-         )).thenReturn("mock-jwt-taken");
+        when(jwtService.geneerateToken(1L,
+                "azfar@example.com"
+        )).thenReturn("mock-jwt-taken");
 
-         mockMvc.perform(post("/api/v1/auth/login")
-           .contentType(MediaType.APPLICATION_JSON)
-            .content("""
-                { 
-                   "email":"azfar@example.com",
-                   "password":"password123"
-
-
-                }"""))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(1L))
-            .andExpect(jsonPath("$.fullName").value("Azfar"))
-            .andExpect(jsonPath("$.email").value("azfar@example.com"))
-            .andExpect(jsonPath("$.accessToken").value("mock-jwt-taken"))
-            .andExpect(jsonPath("$.tokenType").value("Bearer"));
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                   "email":"azfar@example.com",
+                                   "password":"password123"
+                                
+                                
+                                }"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.fullName").value("Azfar"))
+                .andExpect(jsonPath("$.email").value("azfar@example.com"))
+                .andExpect(jsonPath("$.accessToken").value("mock-jwt-taken"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"));
 
         verify(userService).authenticateUser(
-            "azfar@example.com",
-            "password123"
+                "azfar@example.com",
+                "password123"
         );
 
         verify(jwtService).geneerateToken(
-            1L,
-            "azfar@example.com" 
+                1L,
+                "azfar@example.com"
         );
 
-           
     }
-    
-    
+    @Test
+    void shouldReturnUnauthorizedWhenCredentialAreInvalid() throws Exception {
+         when(userService.authenticateUser(
+                 "azfar@example.com",
+                 "wrong password"
+         )).thenThrow(new InvalidCredentialsException("Invalid email or password"));
+         mockMvc.perform(post("/api/v1/auth/login")
+         .contentType(MediaType.APPLICATION_JSON)
+                         .content("""
+        {
+            "email": "azfar@example.com",
+            "password": "wrong password"
+        }
+        """))
+                 .andExpect(status().isUnauthorized());
+         verify(userService).authenticateUser(
+                 "azfar@example.com",
+                 "wrong password"
+         );
+         verifyNoInteractions(jwtService);
+    }
     
 }
