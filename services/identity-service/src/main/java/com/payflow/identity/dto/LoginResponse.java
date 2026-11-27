@@ -7,13 +7,23 @@ public class LoginResponse {
     private String email;
     private String accessToken;
     private String tokenType;
+    private String refreshToken;
 
-    public LoginResponse(Long id, String fullName, String email, String accessToken, String tokenType) {
+    public LoginResponse(Long id, String fullName, String email, String accessToken, String refreshToken,String tokenType) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
         this.tokenType = tokenType;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public Long getId() {
@@ -21,6 +31,7 @@ public class LoginResponse {
     }
 
     public void setId(Long id) {
+
         this.id = id;
     }
 
@@ -45,6 +56,7 @@ public class LoginResponse {
     }
 
     public void setAccessToken(String accessToken) {
+
         this.accessToken = accessToken;
     }
 

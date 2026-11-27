@@ -1,31 +1,28 @@
 package com.payflow.identity.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.payflow.identity.dto.LoginRequest;
 import com.payflow.identity.dto.LoginResponse;
 import com.payflow.identity.dto.RegisterRequest;
 import com.payflow.identity.dto.RegisterResponse;
 import com.payflow.identity.entity.User;
 import com.payflow.identity.security.JwtService;
+import com.payflow.identity.service.RefreshTokenService;
 import com.payflow.identity.service.UserService;
-
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController 
 @RequestMapping ("/api/v1/auth")
 public class AuthController {
     private final UserService userService;
     private final JwtService jwtService;
-    public AuthController(UserService userService, JwtService jwtService) {
+    private final RefreshTokenService refreshTokenService;
+    public AuthController(UserService userService, JwtService jwtService, RefreshTokenService refreshTokenService) {
         this.userService = userService;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping("/register")
@@ -55,17 +52,25 @@ public class AuthController {
                 request.getPassword()
             );
 
-            String accessToken = jwtService.geneerateToken(
-                user.getId(), user.getEmail()
+            String accessToken= jwtService.geneerateToken(
+                    user.getId(),
+                    user.getEmail()
             );
 
+            String refreshToken = refreshTokenService
+                    .createRefreshToken(user)
+                    .getToken();
+
             LoginResponse response = new LoginResponse(
-                user.getId(),
-                user.getFullName(),
-                user.getEmail(),
-                accessToken,
-                "Bearer"
+                    user.getId(),
+                    user.getFullName(),
+                    user.getEmail(),
+                    accessToken,
+                    refreshToken,
+                    "Bearer"
             );
+
+
 
             return ResponseEntity.ok(response);
         }

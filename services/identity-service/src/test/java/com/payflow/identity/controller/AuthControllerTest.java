@@ -1,9 +1,11 @@
 package com.payflow.identity.controller;
 
+import com.payflow.identity.entity.RefreshToken;
 import com.payflow.identity.entity.User;
 import com.payflow.identity.exception.InvalidCredentialsException;
 import com.payflow.identity.security.JwtService;
 import com.payflow.identity.security.SecurityConfig;
+import com.payflow.identity.service.RefreshTokenService;
 import com.payflow.identity.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ class AuthControllerTest {
 
     @MockitoBean 
     private JwtService jwtService;
+
+    @MockitoBean
+    private RefreshTokenService refreshTokenService;
 
     @Test 
     void shouldRegisterUserSuccessfully() throws Exception {
@@ -92,6 +97,14 @@ class AuthControllerTest {
                 "azfar@example.com"
         )).thenReturn("mock-jwt-taken");
 
+        RefreshToken refreshToken = mock(RefreshToken.class);
+
+        when(refreshTokenService.createRefreshToken(user))
+                .thenReturn(refreshToken);
+
+        when(refreshToken.getToken())
+                .thenReturn("mock-refresh-token");
+
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -105,9 +118,9 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.fullName").value("Azfar"))
                 .andExpect(jsonPath("$.email").value("azfar@example.com"))
+                .andExpect(jsonPath("$.refreshToken").value("mock-refresh-token"))
                 .andExpect(jsonPath("$.accessToken").value("mock-jwt-taken"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"));
-
         verify(userService).authenticateUser(
                 "azfar@example.com",
                 "password123"
@@ -117,6 +130,7 @@ class AuthControllerTest {
                 1L,
                 "azfar@example.com"
         );
+        verify(refreshTokenService).createRefreshToken(user);
 
     }
     @Test
