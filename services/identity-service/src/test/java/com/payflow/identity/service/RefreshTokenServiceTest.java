@@ -2,6 +2,8 @@ package com.payflow.identity.service;
 
 import com.payflow.identity.entity.RefreshToken;
 import com.payflow.identity.entity.User;
+import com.payflow.identity.exception.RefreshTokenExpiredException;
+import com.payflow.identity.exception.RefreshTokenNotFoundException;
 import com.payflow.identity.repository.RefreshTokenRepository;
 import com.payflow.identity.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,7 +99,8 @@ public class RefreshTokenServiceTest {
         when(refreshTokenRepository.findByTokenAndRevokedFalse(token))
         .thenReturn(Optional.of(refreshToken));
 
-        assertThrows(RuntimeException.class,
+        assertThrows(
+                RefreshTokenExpiredException.class,
                 () -> refreshTokenService.validateRefreshToken(token)
         );
 
@@ -110,7 +113,7 @@ public class RefreshTokenServiceTest {
         when(refreshTokenRepository.findByTokenAndRevokedFalse(token))
         .thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class,
+        assertThrows(RefreshTokenNotFoundException.class,
                 () -> refreshTokenService.validateRefreshToken(token)
         );
     }

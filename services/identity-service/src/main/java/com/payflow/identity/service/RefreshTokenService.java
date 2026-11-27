@@ -2,6 +2,8 @@ package com.payflow.identity.service;
 
 import com.payflow.identity.entity.RefreshToken;
 import com.payflow.identity.entity.User;
+import com.payflow.identity.exception.RefreshTokenExpiredException;
+import com.payflow.identity.exception.RefreshTokenNotFoundException;
 import com.payflow.identity.repository.RefreshTokenRepository;
 import com.payflow.identity.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,11 +53,13 @@ public class RefreshTokenService {
         RefreshToken refreshToken = refreshTokenRepository
                 .findByTokenAndRevokedFalse(token)
                 .orElseThrow(()->
-                        new RuntimeException("Refresh token not found or revoked")
+                        new RefreshTokenNotFoundException(
+                                "Refresh token not found or revoked"
+                        )
                 );
 
         if(!refreshToken.getExpiryDate().isAfter(LocalDateTime.now())) {
-            throw new RuntimeException("Refresh token expired");
+            throw new RefreshTokenExpiredException("Refresh token expired");
         }
         return refreshToken;
     }
@@ -66,7 +70,9 @@ public class RefreshTokenService {
         RefreshToken refreshToken = refreshTokenRepository
                 .findByTokenAndRevokedFalse(token)
                 .orElseThrow(()->
-                        new RuntimeException("Refresh token not found or already revoked")
+                        new RefreshTokenNotFoundException(
+                                "Refresh token not found or already revoked"
+                        )
                 );
 
         refreshToken.setRevoked(true);

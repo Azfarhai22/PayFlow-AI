@@ -28,4 +28,22 @@ public class GlobalExceptionHandler {
         .body(ex.getMessage());
     }
 
+    @ExceptionHandler(RefreshTokenNotFoundException.class)
+    public ResponseEntity<String> handleRefreshTokenNotFound(
+            RefreshTokenNotFoundException ex){
+
+        return ResponseEntity
+        .status(HttpStatus.NOT_FOUND)
+        .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(RefreshTokenExpiredException.class)
+    public ResponseEntity<String> handleRefreshTokenExpired(
+            RefreshTokenExpiredException ex){
+
+        return ResponseEntity
+        .status(HttpStatus.UNAUTHORIZED)
+        .body(ex.getMessage());
+    }
+
 }
